@@ -8,6 +8,7 @@
 #define NUM_ROWS 36
 #define MAX_PER_ROW 5
 #define NUM_IN_KORVS 54
+#define NUM_SPARKLES 10
 
 CRGB leds[NUM_LEDS];
 int korv[NUM_IN_KORVS] = {
@@ -61,7 +62,30 @@ const int mx[NUM_ROWS][MAX_PER_ROW] = {
 int current = 0;
 int c = 0;
 
+struct sparkle {
+  int pos;
+  int state;
+};
+
+const struct sparkle NEW_SPARKLE = {0, -1};
+sparkle sparkles[NUM_SPARKLES];
+
+void spark() {
+  for(int i = 0; i < NUM_SPARKLES; i++) {
+    sparkle s = sparkles[i];
+    if(state < 0) {
+      s.pos = random(0, NUM_IN_KORVS);
+      s.state = 255;
+    }
+
+    s.state--;
+  }
+}
+
 void setup() {
+  for(int i = 0; i < NUM_SPARKLES; i++) {
+    sparkles[i] = NEW_SPARKLE;
+  }
   FastLED.addLeds<WS2811, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
   fill_solid(leds, NUM_LEDS, CRGB::Black);
@@ -69,7 +93,7 @@ void setup() {
 }
 
 void loop() {
-
+  spark();
   for(int i = 0; i < NUM_ROWS; i++) {
     for(int j = 0; j < MAX_PER_ROW; j++) {
       if(mx[i][j] != -1) {

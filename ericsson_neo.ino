@@ -1,16 +1,15 @@
-//Fade LED
-
 #include "FastLED.h"
 
 #define NUM_LEDS 9*16
 #define DATA_PIN 6
-#define BRIGHTNESS 64
+#define BRIGHTNESS 20
 #define NUM_ROWS 36
 #define MAX_PER_ROW 5
 #define NUM_IN_KORVS 54
 #define NUM_SPARKLES 10
 
 CRGB leds[NUM_LEDS];
+CHSV pixelColors[NUM_LEDS];
 int korv[NUM_IN_KORVS] = {
   -1, -1, -1, -1, -1, -1, -1, -1,
   17, 16,
@@ -65,43 +64,54 @@ int c = 0;
 struct sparkle {
   int pos;
   int state;
+  int offset;
 };
 
 const struct sparkle NEW_SPARKLE = {0, -1};
 sparkle sparkles[NUM_SPARKLES];
 
 void spark() {
+  int ms = millis();
   for(int i = 0; i < NUM_SPARKLES; i++) {
     sparkle s = sparkles[i];
-    if(state < 0) {
+    if(s.state < 0) {
       s.pos = random(0, NUM_IN_KORVS);
-      s.state = 255;
+      s.state = 255000;
     }
 
-    s.state--;
+    /* s.state--; */
+    if(korv[s.pos] > -1) {
+      for(int j = 0; j < 3; j++) {
+        pixelColors[korv[s.pos] + j * 3 * 16].saturation = cubicwave8((ms + s.offset) % 255);
+      }
+    }
   }
 }
 
 void setup() {
   for(int i = 0; i < NUM_SPARKLES; i++) {
     sparkles[i] = NEW_SPARKLE;
+    sparkles[i].offset = random(0, 256);
   }
   FastLED.addLeds<WS2811, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(BRIGHTNESS);
-  fill_solid(leds, NUM_LEDS, CRGB::Black);
+  fill_solid(pixelColors, NUM_LEDS, CHSV(255, 255, 255));
   FastLED.show();
 }
 
 void loop() {
-  spark();
+  unsigned long ms = millis() / 20;
   for(int i = 0; i < NUM_ROWS; i++) {
     for(int j = 0; j < MAX_PER_ROW; j++) {
       if(mx[i][j] != -1) {
-        leds[mx[i][j]] = ColorFromPalette(RainbowColors_p, i * 255 / NUM_ROWS);
+        pixelColors[mx[i][j]].hue = (i + ms / 4) % 255;
+        pixelColors[mx[i][j]].saturation = 255;
       }
     }
   }
 
+  spark();
+  hsv2rgb_rainbow(pixelColors,leds,NUM_LEDS);
   FastLED.show();
-  delay(4);
+  FastLED.delay(10);
 }

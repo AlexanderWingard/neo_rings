@@ -72,24 +72,38 @@ sparkle sparkles[NUM_SPARKLES];
 
 void spark() {
   int ms = millis();
-  for(int i = 0; i < NUM_SPARKLES; i++) {
+  for (int i = 0; i < NUM_SPARKLES; i++) {
     sparkle s = sparkles[i];
-    if(s.state < 0) {
+    if (s.state < 0) {
       s.pos = random(0, NUM_IN_KORVS);
       s.state = 255000;
     }
 
     /* s.state--; */
-    if(korv[s.pos] > -1) {
-      for(int j = 0; j < 3; j++) {
+    if (korv[s.pos] > -1) {
+      for (int j = 0; j < 3; j++) {
         pixelColors[korv[s.pos] + j * 3 * 16].saturation = cubicwave8((ms + s.offset) % 255);
       }
     }
   }
 }
 
+void particle() {
+  unsigned long ts = millis();
+  int second = (ts / 1000) % 60;
+  c = (ts / 25) % 255;
+  current = (current + 1) % NUM_IN_KORVS;
+  for (int y = 0; y < 3; y++) {
+    for (int i = 0; i < NUM_IN_KORVS; i++) {
+      if (korv[i] != -1 ) {
+        pixelColors[korv[i] + y * 3 * 16].saturation = (((i + current) % NUM_IN_KORVS) / (float)NUM_IN_KORVS) * 155 + 100;
+      }
+    } 
+  }
+}
+
 void setup() {
-  for(int i = 0; i < NUM_SPARKLES; i++) {
+  for (int i = 0; i < NUM_SPARKLES; i++) {
     sparkles[i] = NEW_SPARKLE;
     sparkles[i].offset = random(0, 256);
   }
@@ -101,17 +115,18 @@ void setup() {
 
 void loop() {
   unsigned long ms = millis() / 20;
-  for(int i = 0; i < NUM_ROWS; i++) {
-    for(int j = 0; j < MAX_PER_ROW; j++) {
-      if(mx[i][j] != -1) {
+  for (int i = 0; i < NUM_ROWS; i++) {
+    for (int j = 0; j < MAX_PER_ROW; j++) {
+      if (mx[i][j] != -1) {
         pixelColors[mx[i][j]].hue = (i + ms / 4) % 255;
         pixelColors[mx[i][j]].saturation = 255;
       }
     }
   }
 
-  spark();
-  hsv2rgb_rainbow(pixelColors,leds,NUM_LEDS);
+  //spark();
+  particle();
+  hsv2rgb_rainbow(pixelColors, leds, NUM_LEDS);
   FastLED.show();
-  FastLED.delay(10);
+  FastLED.delay(5);
 }
